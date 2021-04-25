@@ -4,15 +4,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Order
+from .permissions import IsOwnerOfOrder
 from .serializer import OrderSerializer, OrderDetailsSerializer
 
 
 class OrderListView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOfOrder]
     serializer_class = OrderDetailsSerializer
 
     def get(self, request, customer_id):
+
+        self.check_permissions(request)
+
         orders = Order.objects.filter(customer_id=customer_id)
+        for order in orders:
+            self.check_object_permissions(request, order)
+
         serializer = OrderDetailsSerializer(orders, many=True)
         return Response(serializer.data)
 
